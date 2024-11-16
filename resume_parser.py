@@ -94,13 +94,13 @@ class ResumeParser:
                     personal_info_element = card.find_element(
                         By.CSS_SELECTOR, ".mt-xs.mb-0"
                     )
-                    personal_info = personal_info_element.text.strip()
+                    info = personal_info_element.text.strip()
+                    personal_info = ", ".join(
+                        part.strip() for part in info.split(",")[:2]
+                    )
 
-                    # Remove salary if it exists in personal_info
-                    if salary_text and salary_text in personal_info:
-                        personal_info = personal_info.replace(salary_text, "").strip()
-
-                    location_info = personal_info.split(",")[-1].strip()
+                    location_info = info.split(",")[2:]
+                    location_info = ", ".join(part.strip() for part in location_info)
                     resume_link = card.find_element(
                         By.CSS_SELECTOR, "h2 a"
                     ).get_attribute("href")
@@ -131,6 +131,85 @@ class ResumeParser:
 
         return resumes
 
+    def parse_robota_ua(
+        self, job_position, location=None, experience=None, salary=None
+    ):
+        url = f"https://robota.ua/candidates/{job_position.replace(' ', '+').lower()}/{f'{location.lower()}' if location else 'ukraine'}"
+        try:
+            print(f"Loading URL: {url}")
+            self.driver.get(url)
+        except Exception as e:
+            print(f"Error loading URL: {e}")
+            return []
+
+        resumes = []
+
+        # Input search criteria and submit the search
+        try:
+            WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "cv-card"))
+            )
+            cards = self.driver.find_elements(By.CSS_SELECTOR, "cv-card")
+
+            for card in cards:
+                try:
+                    print(1)
+                    title = card.find_element(
+                        By.CSS_SELECTOR, ".p.santa-m-0.santa-typo-h3.santa-pb-10"
+                    ).text.strip()
+                    print(2)
+                    location_info = card.find_element(
+                        By.CSS_SELECTOR, 'p[data-id="cv-city-tag"]'
+                    ).text.strip()
+                    print(3)
+                    resume_link = card.find_element(By.CSS_SELECTOR, "a").get_attribute(
+                        "href"
+                    )
+                    print(4)
+                    try:
+                        salary_text = card.find_element(
+                            By.CSS_SELECTOR, ".p.santa-typo-secondary"
+                        ).text.strip()
+                    except:
+                        salary_text = None
+
+                    print(5)
+                    personal_info = card.find_element(
+                        By.CSS_SELECTOR,
+                        ".p.santa-pr-20.santa-typo-regular.santa-truncate.ng-star-inserted",
+                    ).text.strip()
+                    print(6)
+
+                    print("Url: ", url)
+                    print("Title: ", title)
+                    print("Salary: ", salary_text)
+                    print("Info: ", personal_info)
+                    print("Location: ", location_info)
+                    print("Link: ", resume_link)
+                    print()
+
+                    resumes.append(
+                        {
+                            "title": title,
+                            "salary": salary_text,
+                            "personal_info": personal_info,
+                            "location": location_info,
+                            "link": resume_link,
+                        }
+                    )
+                except Exception as e:
+                    print(f"Error parsing a card: {e}")
+                    continue
+
+        except Exception as e:
+            print(f"Error while parsing robota.ua: {e}")
+
+        return resumes
+
+    def close(self):
+        # Close the browser instance
+        self.driver.quit()
+
 
 # Script Execution
 if __name__ == "__main__":
@@ -149,3 +228,17 @@ if __name__ == "__main__":
     work_ua_resumes = parser.parse_work_ua(
         job_position, location=location, experience="1-3"
     )
+
+    # Fetch resumes from robota.ua
+    print("Parsing robota.ua...")
+    robota_ua_resumes = parser.parse_robota_ua(job_position, location=location)
+
+    # Combine results from both websites
+    all_resumes = work_ua_resumes + robota_ua_resumes
+
+    # Print the parsed resumes
+    for resume in all_resumes:
+        print(resume)
+
+    # CLose the browser
+    parser.close()

@@ -8,75 +8,149 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 def parse_experience_range_work_ua(experience_range):
-    # Initialize an empty list to store the experience values
-    experience_values = []
+    """
+    Converts an experience range or a single experience value into corresponding experience codes.
 
-    # Check if the input contains a hyphen (indicating a range)
+    :param experience_range: A string representing a single experience value (e.g., "1")
+                             or a range (e.g., "2-5").
+    :return: A set of experience codes corresponding to the input range.
+    """
+    # Mapping of experience years to corresponding codes
+    experience_mapping = {
+        0: 0,  # "No experience" (code 0)
+        1: 1,  # "Up to 1 year" (code 1)
+        2: 164,  # "1 to 2 years" (code 164)
+        3: 165,  # "1 to 2 years" (code 164)
+        4: 165,  # "2 to 5 years" (code 165)
+        5: 165,  # "2 to 5 years" (code 165)
+        6: 166,  # "More than 5 years" (code 166)
+    }
+
+    # Initialize an empty set to store experience codes (set to ensure uniqueness)
+    experience_values = set()
+
+    # Check if the input contains a hyphen indicating a range
     if "-" in experience_range:
-        start, end = experience_range.split("-")
-        start = int(start)
-        end = int(end)
+        try:
+            # Split and map the range values to integers
+            start, end = map(int, experience_range.split("-"))
 
-        for i in range(start, end + 1):
-            if i == 1:
-                experience_values.append(
-                    1
-                )  # "До 1 року" - this corresponds to the code 1
-            elif i == 2:
-                experience_values.append(
-                    164
-                )  # "Від 1 до 2 років" - this corresponds to the code 164
-            elif i == 3:
-                experience_values.append(
-                    165
-                )  # "Від 2 до 5 років" - this corresponds to the code 165
-            elif i >= 4:
-                experience_values.append(
-                    166
-                )  # "Більше 5 років" - this corresponds to the code 166
+            # Ensure that the start value is not greater than the end value
+            if start > end:
+                raise ValueError("Start value cannot be greater than the end value.")
+
+            # Loop through the range and map experience years to experience codes
+            for i in range(start, end + 1):
+                if i >= 0:
+                    experience_values.add(
+                        experience_mapping.get(i, 166)
+                    )  # Default to "More than 5 years" (code 166)
+
+        except ValueError as e:
+            # Handle invalid input (non-integer or invalid range)
+            raise ValueError(f"Invalid experience range: {e}")
     else:
-        # If no range is provided, convert the input into an integer and add to the list
-        experience_values.append(int(experience_range))
+        # If it's a single experience value, convert it to an integer and map it to the code
+        try:
+            experience = int(experience_range)
+            if experience >= 0:
+                experience_values.add(
+                    experience_mapping.get(experience, 166)
+                )  # Default to "More than 5 years" (code 166)
+            else:
+                raise ValueError("Experience cannot be negative.")
+        except ValueError:
+            # Handle non-integer input
+            raise ValueError(
+                "Invalid experience input. Please provide a valid number or range."
+            )
 
     return experience_values
 
 
+def parse_salary_range_work_ua(salary):
+    """
+    Converts a salary range or a single salary value into a tuple of corresponding salary range IDs.
+
+    :param salary: A string representing a salary value (e.g., "20000", "20000-50000").
+    :return: A tuple with two integers corresponding to the salary range IDs, defaulting to (0, 0).
+    """
+    salary_mapping = {
+        20000: 4,  # from 20,000
+        30000: 5,  # from 30,000
+        40000: 6,  # from 40,000
+        50000: 7,  # up to 50,000
+        100000: 8,  # up to 100,000
+    }
+
+    # Check if the input contains a range (e.g., "20000-50000")
+    if "-" in salary:
+        try:
+            start, end = map(int, salary.split("-"))
+            # Get the corresponding range IDs from the mapping
+            start_value = salary_mapping.get(start, 0)
+            end_value = salary_mapping.get(end, 0)
+            return start_value, end_value
+        except ValueError:
+            # Handle case where the input is not a valid range
+            return 0, 0
+
+    # If it's a single salary value, look up its corresponding ID
+    else:
+        try:
+            salary_value = int(salary)
+            salary_value = salary_mapping.get(salary_value, 0)
+            return salary_value, salary_value
+        except ValueError:
+            # Handle case where the input is not a valid salary
+            return 0, 0
+
+
 def parse_experience_range_robota_ua(experience_range):
     """
-    Преобразует диапазон опыта в список идентификаторов для параметра `experienceIds`.
+    Converts an experience range into a list of corresponding experience IDs.
 
-    :param experience_range: строка с диапазоном опыта (например, "0", "2-3", "4-5")
-    :return: список идентификаторов опыта
+    :param experience_range: A string representing an experience range (e.g., "0", "2-3", "4-5").
+    :return: A list of experience IDs corresponding to the input range.
     """
     experience_values = []
 
-    # Обработка диапазона
+    # Check if the input contains a range (e.g., "2-3")
     if "-" in experience_range:
-        start, end = map(int, experience_range.split("-"))
-        for i in range(start, end + 1):
-            if i < 1:
-                experience_values.append("%220%22")  # Без опыта
-            elif 1 <= i < 2:
-                experience_values.append("%221%22")  # До 1 года
-            elif 2 <= i < 5:
-                experience_values.append("%223%22")  # От 2 до 5 лет
-            elif 5 <= i <= 10:
-                experience_values.append("%224%22")  # От 5 до 10 лет
-            elif i > 10:
-                experience_values.append("%225%22")  # 10+ лет
-    # Обработка одиночного значения
+        try:
+            start, end = map(int, experience_range.split("-"))
+            # Iterate through the range and append corresponding experience IDs
+            for i in range(start, end + 1):
+                if i < 1:
+                    experience_values.append("%220%22")  # No experience
+                elif 1 <= i < 2:
+                    experience_values.append("%221%22")  # Up to 1 year
+                elif 2 <= i < 5:
+                    experience_values.append("%223%22")  # 2 to 5 years
+                elif 5 <= i <= 10:
+                    experience_values.append("%224%22")  # 5 to 10 years
+                elif i > 10:
+                    experience_values.append("%225%22")  # More than 10 years
+        except ValueError:
+            # Handle case where the range is not valid (non-integer values)
+            return []
     else:
-        experience = int(experience_range)
-        if experience < 1:
-            experience_values.append("%220%22")  # Без опыта
-        elif 1 <= experience < 2:
-            experience_values.append("%221%22")  # До 1 года
-        elif 2 <= experience < 5:
-            experience_values.append("%223%22")  # От 2 до 5 лет
-        elif 5 <= experience < 10:
-            experience_values.append("%224%22")  # От 5 до 10 лет
-        elif experience >= 10:
-            experience_values.append("%225%22")  # 10+ лет
+        try:
+            experience = int(experience_range)
+            # Handle a single experience value
+            if experience < 1:
+                experience_values.append("%220%22")  # No experience
+            elif 1 <= experience < 2:
+                experience_values.append("%221%22")  # Up to 1 year
+            elif 2 <= experience < 5:
+                experience_values.append("%223%22")  # 2 to 5 years
+            elif 5 <= experience < 10:
+                experience_values.append("%224%22")  # 5 to 10 years
+            elif experience >= 10:
+                experience_values.append("%225%22")  # More than 10 years
+        except ValueError:
+            # Handle case where the input is not a valid integer
+            return []
 
     return experience_values
 
@@ -95,14 +169,45 @@ class ResumeParser:
         )
 
     def parse_work_ua(self, job_position, location=None, experience=None, salary=None):
-        # Generate URL for searching resumes on work.ua based on the job position
+        """
+        Parses job resumes from work.ua based on given filters like job position, location, experience, and salary.
+
+        :param job_position: Job title to search for.
+        :param location: Optional location to filter resumes by.
+        :param experience: Optional experience range to filter resumes by.
+        :param salary: Optional salary range to filter resumes by.
+        :return: List of resumes with job title, salary, personal info, location, and link.
+        """
+        # Construct URL with optional location and job position
         url = f"https://www.work.ua/resumes-{f'{location.lower()}-' if location else ''}{job_position.replace(' ', '+').lower()}/"
+
+        # Add experience filter to URL if provided
         if experience:
             experience_value = parse_experience_range_work_ua(experience)
             experience_filter = "+".join(map(str, experience_value))
             url += f"?experience={experience_filter}"
 
+        # Add salary filter to URL if provided
+        if salary:
+            start, end = 0, 0
+            salary_result = parse_salary_range_work_ua(salary)
+
+            if len(salary_result) == 2:
+                start, end = salary_result
+            else:
+                start = salary_result
+
+            # Add salary range to URL
+            if "?" not in url and "&" not in url:
+                url += f"?salaryfrom={start}"
+            else:
+                url += f"&salaryfrom={start}"
+
+            if end:
+                url += f"&salaryto={end}"
+
         try:
+            # Attempt to load the constructed URL
             print(f"Loading URL: {url}")
             self.driver.get(url)
         except Exception as e:
@@ -111,7 +216,7 @@ class ResumeParser:
 
         resumes = []
         try:
-            # Wait until resume cards are loaded on the page
+            # Wait for resume cards to be loaded on the page
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_all_elements_located((By.CLASS_NAME, "resume-link"))
             )
@@ -119,55 +224,37 @@ class ResumeParser:
 
             for card in cards:
                 try:
+                    # Extract resume details from each card
                     title = card.find_element(By.CSS_SELECTOR, "h2 a").text.strip()
 
-                    try:
-                        # Extracting name
-                        name_element = card.find_element(
-                            By.CSS_SELECTOR, "p.mt-xs.mb-0 .strong-600"
-                        )
-                        name = name_element.text.strip()
-                    except:
-                        name = None
+                    # Extract personal details (name, age, city) if available
+                    name = self._extract_element_text(card, "p.mt-xs.mb-0 .strong-600")
+                    age = self._extract_element_text(
+                        card, "p.mt-xs.mb-0 span:nth-child(2)"
+                    )
+                    city = self._extract_element_text(
+                        card, "p.mt-xs.mb-0 span:nth-child(3)"
+                    )
 
-                    try:
-                        # Extract age, if exists
-                        age_element = card.find_element(
-                            By.CSS_SELECTOR, "p.mt-xs.mb-0 span:nth-child(2)"
-                        )
-                        age = age_element.text.strip()
-                    except:
-                        age = None
+                    # Extract salary information
+                    salary_text = self._extract_element_text(
+                        card, "p.h5.strong-600.mt-xs.mb-0.nowrap"
+                    )
 
-                    try:
-                        # Extract city
-                        city_element = card.find_element(
-                            By.CSS_SELECTOR, "p.mt-xs.mb-0 span:nth-child(3)"
-                        )
-                        city = city_element.text.strip()
-                    except:
-                        city = None
-
-                    try:
-                        # Extract salary
-                        salary_element = card.find_element(
-                            By.CSS_SELECTOR, "p.h5.strong-600.mt-xs.mb-0.nowrap"
-                        )
-                        salary_text = salary_element.text.strip()
-                    except:
-                        salary_text = None
-
+                    # Get the resume link
                     resume_link = card.find_element(
                         By.CSS_SELECTOR, "h2 a"
                     ).get_attribute("href")
 
-                    print("Title: ", title)
-                    print("Salary: ", salary_text)
-                    print(f"Info: {name}, {age}")
-                    print("Location: ", city)
-                    print("Link: ", resume_link)
-                    print()
+                    # Output the resume details
+                    # print(f"Title: {title}")
+                    # print(f"Salary: {salary_text}")
+                    # print(f"Info: {name}, {age}")
+                    # print(f"Location: {city}")
+                    # print(f"Link: {resume_link}")
+                    # print()
 
+                    # Add resume data to the results list
                     resumes.append(
                         {
                             "title": title,
@@ -186,12 +273,28 @@ class ResumeParser:
 
         return resumes
 
+    def _extract_element_text(self, card, selector):
+        """
+        Extracts text from an element, returns None if the element is not found.
+
+        :param card: The card element containing the target information.
+        :param selector: The CSS selector for the target element.
+        :return: The text of the element or None if the element is not found.
+        """
+        try:
+            # Attempt to find the element using the provided selector and extract its text.
+            element = card.find_element(By.CSS_SELECTOR, selector)
+            return element.text.strip()
+        except Exception:
+            # Return None if the element is not found or an error occurs.
+            return None
+
     def parse_robota_ua(
         self, job_position, location=None, experience=None, salary=None
     ):
         url = f"https://robota.ua/candidates/{job_position.replace(' ', '-').lower()}/{f'{location.lower()}' if location else 'ukraine'}"
 
-        # Проверка и добавление параметров
+        # Checking and adding parameters
         if experience:
             experience_values = parse_experience_range_robota_ua(experience)
             experience_filter = "%2C".join(experience_values)
@@ -249,8 +352,9 @@ class ResumeParser:
 
                     try:
                         age = card.find_element(
-                            By.XPATH, './/*[contains(text(), " років")]'
-                        ).text.split()[0]
+                            By.XPATH,
+                            './/*[contains(text(), " років") or contains(text(), " роки") or contains(text(), " рік")]',
+                        ).text.strip()
                     except Exception:
                         age = None
 
@@ -269,12 +373,12 @@ class ResumeParser:
                     except Exception:
                         resume_link = None
 
-                    print("Title: ", title)
-                    print("Salary: ", salary_text)
-                    print(f"Info: {name}, {age}")
-                    print("Location: ", city)
-                    print("Link: ", resume_link)
-                    print()
+                    # print("Title: ", title)
+                    # print("Salary: ", salary_text)
+                    # print(f"Info: {name}, {age}")
+                    # print("Location: ", city)
+                    # print("Link: ", resume_link)
+                    # print()
 
                     resumes.append(
                         {
@@ -314,21 +418,21 @@ if __name__ == "__main__":
     # Fetch resumes from work.ua
     print("Parsing work.ua...")
     work_ua_resumes = parser.parse_work_ua(
-        job_position, location=location, experience="1-3"
+        job_position, location=location, experience="3", salary="0-50000"
     )
 
     # Fetch resumes from robota.ua
-    # print("Parsing robota.ua...")
-    # robota_ua_resumes = parser.parse_robota_ua(
-    #     job_position, location=location, experience="2-3", salary="1000-1500"
-    # )
+    print("Parsing robota.ua...")
+    robota_ua_resumes = parser.parse_robota_ua(
+        job_position, location=location, experience="2-3", salary="10000-30000"
+    )
 
-    # # Combine results from both websites
-    # all_resumes = work_ua_resumes + robota_ua_resumes
+    # Combine results from both websites
+    all_resumes = work_ua_resumes + robota_ua_resumes
 
-    # # Print the parsed resumes
-    # for resume in all_resumes:
-    #     print(resume)
+    # Print the parsed resumes
+    for resume in all_resumes:
+        print(resume)
 
     # Close the browser
     parser.close()

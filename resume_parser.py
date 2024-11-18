@@ -208,10 +208,10 @@ class ResumeParser:
 
         try:
             # Attempt to load the constructed URL
-            print(f"Loading URL: {url}")
+            print(f"Loading URL: {url}.")
             self.driver.get(url)
         except Exception as e:
-            print(f"Error loading URL: {e}")
+            print(f"Error loading URL: {e}.")
             return []
 
         resumes = []

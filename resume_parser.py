@@ -81,35 +81,60 @@ class ResumeParser:
                 try:
                     title = card.find_element(By.CSS_SELECTOR, "h2 a").text.strip()
 
-                    # Extract salary only from the specific element
                     try:
+                        # Extracting name
+                        name_element = card.find_element(
+                            By.CSS_SELECTOR, "p.mt-xs.mb-0 .strong-600"
+                        )
+                        name = name_element.text.strip()
+                    except:
+                        name = None
+
+                    try:
+                        # Extract age, if exists
+                        age_element = card.find_element(
+                            By.CSS_SELECTOR, "p.mt-xs.mb-0 span:nth-child(2)"
+                        )
+                        age = age_element.text.strip()
+                    except:
+                        age = None
+
+                    try:
+                        # Extract city
+                        city_element = card.find_element(
+                            By.CSS_SELECTOR, "p.mt-xs.mb-0 span:nth-child(3)"
+                        )
+                        city = city_element.text.strip()
+                    except:
+                        city = None
+
+                    try:
+                        # Extract salary
                         salary_element = card.find_element(
-                            By.CSS_SELECTOR, ".h5.strong-600.mt-xs.mb-0.nowrap"
+                            By.CSS_SELECTOR, "p.h5.strong-600.mt-xs.mb-0.nowrap"
                         )
                         salary_text = salary_element.text.strip()
-                    except Exception as e:
+                    except:
                         salary_text = None
 
-                    # Extract personal info (name, age, location) from a separate element
-                    personal_info_element = card.find_element(
-                        By.CSS_SELECTOR, ".mt-xs.mb-0"
-                    )
-                    info = personal_info_element.text.strip()
-                    personal_info = ", ".join(
-                        part.strip() for part in info.split(",")[:2]
-                    )
+                    try:
+                        # Extract experiecne
+                        experience_element = card.find_element(
+                            By.CSS_SELECTOR, "ul.mt-lg.mb-0 li span.text-default-7"
+                        )
+                        experience = experience_element.text.strip()
+                    except:
+                        experience = None
 
-                    location_info = info.split(",")[2:]
-                    location_info = ", ".join(part.strip() for part in location_info)
                     resume_link = card.find_element(
                         By.CSS_SELECTOR, "h2 a"
                     ).get_attribute("href")
 
-                    print("Url: ", url)
                     print("Title: ", title)
-                    print("Salary: ", salary_text)
-                    print("Info: ", personal_info)
-                    print("Location: ", location_info)
+                    print("Salary: ", salary)
+                    print(f"Info: {name}, {age}")
+                    print("Experience:", experience)
+                    print("Location: ", city)
                     print("Link: ", resume_link)
                     print()
 
@@ -117,8 +142,8 @@ class ResumeParser:
                         {
                             "title": title,
                             "salary": salary_text,
-                            "personal_info": personal_info,
-                            "location": location_info,
+                            "personal_info": f"{name}, {age}",
+                            "location": city,
                             "link": resume_link,
                         }
                     )
@@ -230,15 +255,15 @@ if __name__ == "__main__":
     )
 
     # Fetch resumes from robota.ua
-    print("Parsing robota.ua...")
-    robota_ua_resumes = parser.parse_robota_ua(job_position, location=location)
+    # print("Parsing robota.ua...")
+    # robota_ua_resumes = parser.parse_robota_ua(job_position, location=location)
 
-    # Combine results from both websites
-    all_resumes = work_ua_resumes + robota_ua_resumes
+    # # Combine results from both websites
+    # all_resumes = work_ua_resumes + robota_ua_resumes
 
-    # Print the parsed resumes
-    for resume in all_resumes:
-        print(resume)
+    # # Print the parsed resumes
+    # for resume in all_resumes:
+    #     print(resume)
 
-    # CLose the browser
+    # Close the browser
     parser.close()

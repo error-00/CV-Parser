@@ -7,7 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-def parse_experience_range(experience_range):
+def parse_experience_range_work_ua(experience_range):
     # Initialize an empty list to store the experience values
     experience_values = []
 
@@ -41,6 +41,46 @@ def parse_experience_range(experience_range):
     return experience_values
 
 
+def parse_experience_range_robota_ua(experience_range):
+    """
+    Преобразует диапазон опыта в список идентификаторов для параметра `experienceIds`.
+
+    :param experience_range: строка с диапазоном опыта (например, "0", "2-3", "4-5")
+    :return: список идентификаторов опыта
+    """
+    experience_values = []
+
+    # Обработка диапазона
+    if "-" in experience_range:
+        start, end = map(int, experience_range.split("-"))
+        for i in range(start, end + 1):
+            if i < 1:
+                experience_values.append("%220%22")  # Без опыта
+            elif 1 <= i < 2:
+                experience_values.append("%221%22")  # До 1 года
+            elif 2 <= i < 5:
+                experience_values.append("%223%22")  # От 2 до 5 лет
+            elif 5 <= i <= 10:
+                experience_values.append("%224%22")  # От 5 до 10 лет
+            elif i > 10:
+                experience_values.append("%225%22")  # 10+ лет
+    # Обработка одиночного значения
+    else:
+        experience = int(experience_range)
+        if experience < 1:
+            experience_values.append("%220%22")  # Без опыта
+        elif 1 <= experience < 2:
+            experience_values.append("%221%22")  # До 1 года
+        elif 2 <= experience < 5:
+            experience_values.append("%223%22")  # От 2 до 5 лет
+        elif 5 <= experience < 10:
+            experience_values.append("%224%22")  # От 5 до 10 лет
+        elif experience >= 10:
+            experience_values.append("%225%22")  # 10+ лет
+
+    return experience_values
+
+
 class ResumeParser:
     def __init__(self, driver_path):
         # Initialize Selenium WebDriver with headless Chrome options
@@ -58,7 +98,7 @@ class ResumeParser:
         # Generate URL for searching resumes on work.ua based on the job position
         url = f"https://www.work.ua/resumes-{f'{location.lower()}-' if location else ''}{job_position.replace(' ', '+').lower()}/"
         if experience:
-            experience_value = parse_experience_range(experience)
+            experience_value = parse_experience_range_work_ua(experience)
             experience_filter = "+".join(map(str, experience_value))
             url += f"?experience={experience_filter}"
 
@@ -117,23 +157,13 @@ class ResumeParser:
                     except:
                         salary_text = None
 
-                    try:
-                        # Extract experiecne
-                        experience_element = card.find_element(
-                            By.CSS_SELECTOR, "ul.mt-lg.mb-0 li span.text-default-7"
-                        )
-                        experience = experience_element.text.strip()
-                    except:
-                        experience = None
-
                     resume_link = card.find_element(
                         By.CSS_SELECTOR, "h2 a"
                     ).get_attribute("href")
 
                     print("Title: ", title)
-                    print("Salary: ", salary)
+                    print("Salary: ", salary_text)
                     print(f"Info: {name}, {age}")
-                    print("Experience:", experience)
                     print("Location: ", city)
                     print("Link: ", resume_link)
                     print()
@@ -159,7 +189,28 @@ class ResumeParser:
     def parse_robota_ua(
         self, job_position, location=None, experience=None, salary=None
     ):
-        url = f"https://robota.ua/candidates/{job_position.replace(' ', '+').lower()}/{f'{location.lower()}' if location else 'ukraine'}"
+        url = f"https://robota.ua/candidates/{job_position.replace(' ', '-').lower()}/{f'{location.lower()}' if location else 'ukraine'}"
+
+        # Проверка и добавление параметров
+        if experience:
+            experience_values = parse_experience_range_robota_ua(experience)
+            experience_filter = "%2C".join(experience_values)
+            if "?" not in url:
+                url += f"?experienceIds=%5B{experience_filter}%5D"
+            else:
+                url += f"&experienceIds=%5B{experience_filter}%5D"
+
+        if salary:
+            if "-" in salary:
+                start, end = map(int, salary.split("-"))
+            else:
+                start = salary
+                end = "null"
+            if "?" not in url and "&" not in url:
+                url += f"?salary=%7B%22from%22%3A{start}%2C%22to%22%3A{end}%7D"
+            else:
+                url += f"&salary=%7B%22from%22%3A{start}%2C%22to%22%3A{end}%7D"
+
         try:
             print(f"Loading URL: {url}")
             self.driver.get(url)
@@ -174,42 +225,54 @@ class ResumeParser:
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.CLASS_NAME, "cv-card"))
             )
-            cards = self.driver.find_elements(By.CSS_SELECTOR, "cv-card")
+            cards = self.driver.find_elements(By.CSS_SELECTOR, ".cv-card")
 
             for card in cards:
                 try:
-                    print(1)
                     title = card.find_element(
-                        By.CSS_SELECTOR, ".p.santa-m-0.santa-typo-h3.santa-pb-10"
+                        By.CSS_SELECTOR, "p.santa-m-0.santa-typo-h3.santa-pb-10"
                     ).text.strip()
-                    print(2)
-                    location_info = card.find_element(
-                        By.CSS_SELECTOR, 'p[data-id="cv-city-tag"]'
-                    ).text.strip()
-                    print(3)
-                    resume_link = card.find_element(By.CSS_SELECTOR, "a").get_attribute(
-                        "href"
-                    )
-                    print(4)
+
+                    try:
+                        name = card.find_element(
+                            By.CSS_SELECTOR, '[data-id="cv-speciality"] + div p'
+                        ).text
+                    except Exception:
+                        name = None
+
+                    try:
+                        city = card.find_element(
+                            By.CSS_SELECTOR, '[data-id="cv-city-tag"]'
+                        ).text
+                    except Exception:
+                        city = None
+
+                    try:
+                        age = card.find_element(
+                            By.XPATH, './/*[contains(text(), " років")]'
+                        ).text.split()[0]
+                    except Exception:
+                        age = None
+
                     try:
                         salary_text = card.find_element(
-                            By.CSS_SELECTOR, ".p.santa-typo-secondary"
+                            By.XPATH,
+                            './/*[contains(text(), "$") or contains(text(), "грн")]',
                         ).text.strip()
-                    except:
+                    except Exception:
                         salary_text = None
 
-                    print(5)
-                    personal_info = card.find_element(
-                        By.CSS_SELECTOR,
-                        ".p.santa-pr-20.santa-typo-regular.santa-truncate.ng-star-inserted",
-                    ).text.strip()
-                    print(6)
+                    try:
+                        resume_link = card.find_element(By.TAG_NAME, "a").get_attribute(
+                            "href"
+                        )
+                    except Exception:
+                        resume_link = None
 
-                    print("Url: ", url)
                     print("Title: ", title)
                     print("Salary: ", salary_text)
-                    print("Info: ", personal_info)
-                    print("Location: ", location_info)
+                    print(f"Info: {name}, {age}")
+                    print("Location: ", city)
                     print("Link: ", resume_link)
                     print()
 
@@ -217,8 +280,8 @@ class ResumeParser:
                         {
                             "title": title,
                             "salary": salary_text,
-                            "personal_info": personal_info,
-                            "location": location_info,
+                            "personal_info": f"{name}, {age}",
+                            "location": city,
                             "link": resume_link,
                         }
                     )
@@ -256,7 +319,9 @@ if __name__ == "__main__":
 
     # Fetch resumes from robota.ua
     # print("Parsing robota.ua...")
-    # robota_ua_resumes = parser.parse_robota_ua(job_position, location=location)
+    # robota_ua_resumes = parser.parse_robota_ua(
+    #     job_position, location=location, experience="2-3", salary="1000-1500"
+    # )
 
     # # Combine results from both websites
     # all_resumes = work_ua_resumes + robota_ua_resumes

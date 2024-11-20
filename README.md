@@ -1,20 +1,20 @@
-# Job Resume Finder Telegram Bot
+# Job Resume Finder Telegram Bot 🤖
 
 This project is a Telegram bot that allows users to search for resumes based on job position, location, experience, and salary range. The bot fetches resumes from popular Ukrainian job sites (Work.ua, Robota.ua) and provides the relevant information such as title, salary, personal info, location, and more.
 
-## Features
+## Features 🎯
 
 - Allows users to select a job site (Work.ua, Robota.ua, or All).
 - Prompts users to enter details such as job position, location, experience level, and salary range.
 - Fetches resumes based on the user’s input and displays the results.
 - Provides a simple and interactive way to search for resumes.
 
-## Requirements
+## Requirements 📦
 
 - Python 3.7+
 - Required Python libraries (listed below)
 
-## Libraries:
+## Libraries: 📚
 
   - `python-telegram-bot` — For interacting with the Telegram API.
   - `requests` — For sending HTTP requests to fetch resume data from job sites.
@@ -22,7 +22,7 @@ This project is a Telegram bot that allows users to search for resumes based on 
   - `resume-parser` — For parsing and processing resumes from fetched data.
   - `config` — For securely storing sensitive information like the Telegram bot token.
 
-## Setup Instructions
+## Setup Instructions 🛠️
 
 ### 1. Clone the Repository
 
@@ -64,9 +64,9 @@ Once the configuration is complete, you can run the bot using:
 python bot.py
 ```
 
-The bot will start running and will respond to users as they interact with it.
+The bot will start running and will respond to users as they interact with it. 🚀
 
-## Usage
+## Usage 🖱️
 
 1. **Start the Bot**  
    Type `/start` to begin interacting with the bot. You’ll be prompted to choose a job site (Work.ua, Robota.ua, or All).
@@ -92,7 +92,7 @@ The bot will start running and will respond to users as they interact with it.
 4. **Help Command**  
    Use `/help` for basic instructions on how to start the bot.
 
-## Example Interaction
+## Example Interaction 📱
 
 1. **Bot:** Choose a job site:
    - Work.ua
@@ -114,4 +114,4 @@ The bot will start running and will respond to users as they interact with it.
    **User:** 30000-50000
 
 7. **Bot:** Fetching resumes for “Software Developer”…  
-   **Bot:** Displays the top resumes
+   **Bot:** Displays the top resumes 👔📄

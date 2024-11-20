@@ -112,5 +112,6 @@ The bot will start running and will respond to users as they interact with it.
 
 6. **Bot:** Please enter the salary range (optional, write `-`):  
    **User:** 30000-50000
-### 7.	Bot: Fetching resumes for “Software Developer”…
-Bot: Displays the top resumes
+
+7. **Bot:** Fetching resumes for “Software Developer”…  
+   **Bot:** Displays the top resumes

@@ -4,21 +4,23 @@ This project is a Telegram bot that allows users to search for resumes based on 
 
 ## Features
 
-•	Allows users to select a job site (Work.ua, Robota.ua, or All).
-•	Prompts users to enter details such as job position, location, experience level, and salary range.
-•	Fetches resumes based on the user’s input and displays the results.
-•	Provides a simple and interactive way to search for resumes.
+- Allows users to select a job site (Work.ua, Robota.ua, or All).
+- Prompts users to enter details such as job position, location, experience level, and salary range.
+- Fetches resumes based on the user’s input and displays the results.
+- Provides a simple and interactive way to search for resumes.
 
 ## Requirements
 
-•	Python 3.7+
-•	Required Python libraries (listed below)
+- Python 3.7+
+- Required Python libraries (listed below)
 
 ## Libraries:
 
-•	python-telegram-bot
-•	resume-parser (for fetching resumes)
-•	config (for storing sensitive information like Telegram token)
+  - `python-telegram-bot` — For interacting with the Telegram API.
+  - `requests` — For sending HTTP requests to fetch resume data from job sites.
+  - `selenium` — For web scraping of job listings that may require interaction with dynamic pages (e.g., JavaScript rendering).
+  - `resume-parser` — For parsing and processing resumes from fetched data.
+  - `config` — For securely storing sensitive information like the Telegram bot token.
 
 ## Setup Instructions
 
@@ -69,21 +71,21 @@ Type /start to begin interacting with the bot. You’ll be prompted to choose a 
 The bot will ask you for a job position, location, experience level, and salary range. You can skip any field by typing -.
 3.	View Resumes
 Once all the information is provided, the bot will search for relevant resumes and display the results. Each resume will show:
-	•	Job title
-	•	Salary
-	•	Personal information
-	•	Location
-	•	Link to the resume
-	•	Score of relevance
-4.	Help Command
+- Job title
+- Salary
+- Personal information
+- Location
+- Link to the resume
+- Score of relevance
+5.	Help Command
 Use /help for basic instructions on how to start the bot.
 
 ## Example Interaction
 
 ### 1.	Bot: Choose a job site:
-•	Work.ua
-•	Robota.ua
-•	All
+- Work.ua
+- Robota.ua
+- All
 ### 2.	User: Select a job site, e.g., “Work.ua”
 ### 3.	Bot: Please enter the job position you are looking for:
 User: Software Developer

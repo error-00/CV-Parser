@@ -40,10 +40,13 @@ pip install -r requirements.txt
 
 ### 3. Set Up Your Telegram Bot
 
-To interact with the bot, you need to create a bot using BotFather on Telegram and get your bot’s token.
-	1.	Go to Telegram and search for BotFather.
-	2.	Start a conversation and type /newbot.
-	3.	Follow the instructions to create your bot and get the token.
+To interact with the bot, you need to create a bot using **BotFather** on Telegram and get your bot’s token:
+
+1. Go to Telegram and search for **BotFather**.
+2. Start a conversation with **BotFather** and type `/newbot`.
+3. Follow the instructions to create your bot.
+4. Once your bot is created, you will receive a token. Copy this token.
+5. In the `config.py` file, replace `TELEGRAM_TOKEN` with the token you received from **BotFather**:
 
 ### 4. Configure the Token
 
@@ -65,35 +68,49 @@ The bot will start running and will respond to users as they interact with it.
 
 ## Usage
 
-1.	Start the Bot
-Type /start to begin interacting with the bot. You’ll be prompted to choose a job site (Work.ua, Robota.ua, or All).
-2.	Enter Job Details
-The bot will ask you for a job position, location, experience level, and salary range. You can skip any field by typing -.
-3.	View Resumes
-Once all the information is provided, the bot will search for relevant resumes and display the results. Each resume will show:
-- Job title
-- Salary
-- Personal information
-- Location
-- Link to the resume
-- Score of relevance
-5.	Help Command
-Use /help for basic instructions on how to start the bot.
+1. **Start the Bot**  
+   Type `/start` to begin interacting with the bot. You’ll be prompted to choose a job site (Work.ua, Robota.ua, or All).
+
+2. **Enter Job Details**  
+   The bot will ask you for the following details:
+   - Job position
+   - Location
+   - Experience level
+   - Salary range
+
+   You can skip any field by typing `-`.
+
+3. **View Resumes**  
+   Once all the information is provided, the bot will search for relevant resumes and display the results. Each resume will show:
+   - Job title
+   - Salary
+   - Personal information
+   - Location
+   - Link to the resume
+   - Score of relevance
+
+4. **Help Command**  
+   Use `/help` for basic instructions on how to start the bot.
 
 ## Example Interaction
 
-### 1.	Bot: Choose a job site:
-- Work.ua
-- Robota.ua
-- All
-### 2.	User: Select a job site, e.g., “Work.ua”
-### 3.	Bot: Please enter the job position you are looking for:
-User: Software Developer
-### 4.	Bot: Please enter the location (optional, write -):
-User: Kyiv
-### 5.	Bot: Please enter the experience level/range (optional, write -):
-User: 2-5
-### 6.	Bot: Please enter the salary range (optional, write -):
-User: 30000-50000
+1. **Bot:** Choose a job site:
+   - Work.ua
+   - Robota.ua
+   - All
+
+2. **User:** Select a job site, e.g., “Work.ua”
+
+3. **Bot:** Please enter the job position you are looking for:  
+   **User:** Software Developer
+
+4. **Bot:** Please enter the location (optional, write `-`):  
+   **User:** Kyiv
+
+5. **Bot:** Please enter the experience level/range (optional, write `-`):  
+   **User:** 2-5
+
+6. **Bot:** Please enter the salary range (optional, write `-`):  
+   **User:** 30000-50000
 ### 7.	Bot: Fetching resumes for “Software Developer”…
 Bot: Displays the top resumes

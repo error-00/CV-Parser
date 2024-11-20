@@ -5,6 +5,21 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from translate import Translator
+import requests
+
+
+def get_usd_rate_nbu():
+    url = "https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?json"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        for currency in data:
+            if currency["cc"] == "USD":
+                return currency["rate"]
+    else:
+        print(f"Error: Unable to fetch data. Status code: {response.status_code}")
+        return None
 
 
 def parse_experience_range_work_ua(experience_range):
@@ -84,7 +99,7 @@ def parse_salary_range_work_ua(salary):
     }
 
     # Check if the input contains a range (e.g., "20000-50000")
-    if "-" in salary:
+    if salary and "-" in salary:
         try:
             start, end = map(int, salary.split("-"))
             # Get the corresponding range IDs from the mapping
@@ -101,7 +116,7 @@ def parse_salary_range_work_ua(salary):
             salary_value = int(salary)
             salary_value = salary_mapping.get(salary_value, 0)
             return salary_value, salary_value
-        except ValueError:
+        except:
             # Handle case where the input is not a valid salary
             return 0, 0
 
@@ -403,6 +418,83 @@ class ResumeParser:
         self.driver.quit()
 
 
+def translate_location(location, source_lang="uk", target_lang="en"):
+    translator = Translator(from_lang=source_lang, to_lang=target_lang)
+    try:
+        return translator.translate(location).replace(" city", "").strip()
+    except Exception as e:
+        print(f"Error in translation: {e}")
+        return location
+
+
+def calculate_score(candidate, job_position, location, salary_range):
+    """
+    Calculate relevance score for a candidate based on defined criteria.
+
+    :param candidate: Dictionary with candidate details.
+    :param job_position: Desired job position (e.g., "Python Developer").
+    :param location: Desired location (e.g., "Київ").
+    :param salary_range: Desired salary range (e.g., "20000-50000").
+    :return: Relevance score (int).
+    """
+    score = 0
+
+    # Keyword matching in title
+    title_keywords = job_position.lower().split()
+    score += sum(
+        5 for keyword in title_keywords if keyword in candidate["title"].lower()
+    )
+
+    # Location match
+    if location.lower() in candidate.get("location", "").lower():
+        score += 10
+
+    # Salary match
+    usd_rate = get_usd_rate_nbu()
+    candidate_salary = candidate.get("salary")
+    if candidate_salary:
+        try:
+            min_salary, max_salary = map(int, salary_range.split("-"))
+            if "$" in candidate_salary:
+                salary_value = (
+                    int(candidate_salary.replace(" ", "").replace("$", "").strip())
+                    * usd_rate
+                )
+            else:
+                salary_value = int(
+                    candidate_salary.replace(" ", "").replace("грн", "").strip()
+                )
+            if min_salary <= salary_value <= max_salary:
+                score += 15
+        except ValueError:
+            pass  # Ignore non-numeric salary values
+
+    return score
+
+
+def sort_candidates(candidates, job_position, location, salary_range):
+    """
+    Sort candidates based on relevance score.
+
+    :param candidates: List of candidate dictionaries.
+    :param job_position: Desired job position.
+    :param location: Desired location.
+    :param salary_range: Desired salary range.
+    :return: Sorted list of candidates.
+    """
+    # Calculate scores for each candidate
+    scored_candidates = [
+        {
+            **candidate,
+            "score": calculate_score(candidate, job_position, location, salary_range),
+        }
+        for candidate in candidates
+    ]
+
+    # Sort by score in descending order
+    return sorted(scored_candidates, key=lambda x: x["score"], reverse=True)
+
+
 # Script Execution
 if __name__ == "__main__":
     # Specify the path to the Chromedriver executable
@@ -413,26 +505,39 @@ if __name__ == "__main__":
 
     # Define search criteria
     job_position = "Python Developer"  # Job title to search for
-    location = "Kyiv"  # Location filter
+    location = "Київ"  # Location filter
+    salary_range = "20000-50000"
+    experience_range = "2-3"
 
     # Fetch resumes from work.ua
     print("Parsing work.ua...")
     work_ua_resumes = parser.parse_work_ua(
-        job_position, location=location, experience="3", salary="0-50000"
+        job_position,
+        location=translate_location(location),
+        experience=experience_range,
+        salary=salary_range,
     )
 
-    # Fetch resumes from robota.ua
+    # # Fetch resumes from robota.ua
     print("Parsing robota.ua...")
     robota_ua_resumes = parser.parse_robota_ua(
-        job_position, location=location, experience="2-3", salary="10000-30000"
+        job_position,
+        location=translate_location(location),
+        experience=experience_range,
+        salary=salary_range,
     )
 
     # Combine results from both websites
     all_resumes = work_ua_resumes + robota_ua_resumes
 
-    # Print the parsed resumes
-    for resume in all_resumes:
-        print(resume)
+    sorted_candidates = sort_candidates(
+        all_resumes, job_position, location, salary_range
+    )
+
+    for candidate in sorted_candidates:
+        print(
+            f"{candidate['title']} | Score: {candidate['score']} | Link: {candidate['link']}"
+        )
 
     # Close the browser
     parser.close()

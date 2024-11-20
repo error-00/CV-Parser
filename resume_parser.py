@@ -495,49 +495,101 @@ def sort_candidates(candidates, job_position, location, salary_range):
     return sorted(scored_candidates, key=lambda x: x["score"], reverse=True)
 
 
-# Script Execution
-if __name__ == "__main__":
-    # Specify the path to the Chromedriver executable
-    chromedriver_path = (
-        "/usr/local/bin/chromedriver"  # Update the path if Chromedriver is not in PATH
-    )
-    parser = ResumeParser(driver_path=chromedriver_path)
+# Function to fetch resumes based on the site and filters
+def fetch_resumes(
+    site: str,
+    job_position: str,
+    location=None,
+    experience=None,
+    salary=None,
+):
+    try:
+        # Specify the path to the Chromedriver executable
+        chromedriver_path = "/usr/local/bin/chromedriver"  # Update the path if Chromedriver is not in PATH
+        parser = ResumeParser(driver_path=chromedriver_path)
 
-    # Define search criteria
-    job_position = "Python Developer"  # Job title to search for
-    location = "Київ"  # Location filter
-    salary_range = "20000-50000"
-    experience_range = "2-3"
+        # Helper function to fetch resumes for a site
+        def fetch_for_site(site_name: str):
+            if site_name == "work_ua":
+                return parser.parse_work_ua(
+                    job_position,
+                    location=translate_location(location),
+                    experience=experience,
+                    salary=salary,
+                )
+            elif site_name == "robota_ua":
+                return parser.parse_robota_ua(
+                    job_position,
+                    location=translate_location(location),
+                    experience=experience,
+                    salary=salary,
+                )
+            else:
+                raise ValueError(f"Unsupported site: {site_name}")
 
-    # Fetch resumes from work.ua
-    print("Parsing work.ua...")
-    work_ua_resumes = parser.parse_work_ua(
-        job_position,
-        location=translate_location(location),
-        experience=experience_range,
-        salary=salary_range,
-    )
+        # Fetch resumes based on the selected site(s)
+        if site == "work_ua" or site == "robota_ua":
+            all_resumes = fetch_for_site(site)
+        else:
+            all_resumes = fetch_for_site("work_ua") + fetch_for_site("robota_ua")
 
-    # # Fetch resumes from robota.ua
-    print("Parsing robota.ua...")
-    robota_ua_resumes = parser.parse_robota_ua(
-        job_position,
-        location=translate_location(location),
-        experience=experience_range,
-        salary=salary_range,
-    )
+        # Sort resumes based on the selected criteria
+        sorted_candidates = sort_candidates(all_resumes, job_position, location, salary)
 
-    # Combine results from both websites
-    all_resumes = work_ua_resumes + robota_ua_resumes
+        return sorted_candidates
 
-    sorted_candidates = sort_candidates(
-        all_resumes, job_position, location, salary_range
-    )
+    except Exception as e:
+        print(f"Error occurred while fetching resumes: {e}")
+        return []  # Return an empty list in case of error
+    finally:
+        # Ensure the parser is always closed
+        if "parser" in locals():
+            parser.close()
 
-    for candidate in sorted_candidates:
-        print(
-            f"{candidate['title']} | Score: {candidate['score']} | Link: {candidate['link']}"
-        )
 
-    # Close the browser
-    parser.close()
+# # Script Execution
+# if __name__ == "__main__":
+#     # Specify the path to the Chromedriver executable
+#     chromedriver_path = (
+#         "/usr/local/bin/chromedriver"  # Update the path if Chromedriver is not in PATH
+#     )
+#     parser = ResumeParser(driver_path=chromedriver_path)
+
+#     # Define search criteria
+#     job_position = "Python Developer"  # Job title to search for
+#     location = "Київ"  # Location filter
+#     salary_range = "20000-50000"
+#     experience_range = "2-3"
+
+#     # Fetch resumes from work.ua
+#     print("Parsing work.ua...")
+#     work_ua_resumes = parser.parse_work_ua(
+#         job_position,
+#         location=translate_location(location),
+#         experience=experience_range,
+#         salary=salary_range,
+#     )
+
+#     # Fetch resumes from robota.ua
+#     print("Parsing robota.ua...")
+#     robota_ua_resumes = parser.parse_robota_ua(
+#         job_position,
+#         location=translate_location(location),
+#         experience=experience_range,
+#         salary=salary_range,
+#     )
+
+#     # Combine results from both websites
+#     all_resumes = work_ua_resumes + robota_ua_resumes
+
+#     sorted_candidates = sort_candidates(
+#         all_resumes, job_position, location, salary_range
+#     )
+
+#     for candidate in sorted_candidates:
+#         print(
+#             f"{candidate['title']} | Score: {candidate['score']} | Link: {candidate['link']}"
+#         )
+
+#     # Close the browser
+#     parser.close()

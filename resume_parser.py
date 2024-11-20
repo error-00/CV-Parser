@@ -232,7 +232,7 @@ class ResumeParser:
         resumes = []
         try:
             # Wait for resume cards to be loaded on the page
-            WebDriverWait(self.driver, 10).until(
+            WebDriverWait(self.driver, 20).until(
                 EC.presence_of_all_elements_located((By.CLASS_NAME, "resume-link"))
             )
             cards = self.driver.find_elements(By.CSS_SELECTOR, ".card.resume-link")
@@ -340,7 +340,7 @@ class ResumeParser:
 
         # Input search criteria and submit the search
         try:
-            WebDriverWait(self.driver, 10).until(
+            WebDriverWait(self.driver, 20).until(
                 EC.presence_of_element_located((By.CLASS_NAME, "cv-card"))
             )
             cards = self.driver.find_elements(By.CSS_SELECTOR, ".cv-card")
@@ -446,13 +446,17 @@ def calculate_score(candidate, job_position, location, salary_range):
     )
 
     # Location match
-    if location.lower() in candidate.get("location", "").lower():
+    if (
+        location
+        and candidate.get("location", "")
+        and location.lower() in candidate.get("location", "").lower()
+    ):
         score += 10
 
     # Salary match
     usd_rate = get_usd_rate_nbu()
     candidate_salary = candidate.get("salary")
-    if candidate_salary:
+    if salary_range and candidate_salary:
         try:
             min_salary, max_salary = map(int, salary_range.split("-"))
             if "$" in candidate_salary:
@@ -462,7 +466,10 @@ def calculate_score(candidate, job_position, location, salary_range):
                 )
             else:
                 salary_value = int(
-                    candidate_salary.replace(" ", "").replace("грн", "").strip()
+                    candidate_salary.replace(" ", "")
+                    .replace("грн", "")
+                    .replace(".", "")
+                    .strip()
                 )
             if min_salary <= salary_value <= max_salary:
                 score += 15
@@ -513,14 +520,14 @@ def fetch_resumes(
             if site_name == "work_ua":
                 return parser.parse_work_ua(
                     job_position,
-                    location=translate_location(location),
+                    location=translate_location(location) if location else location,
                     experience=experience,
                     salary=salary,
                 )
             elif site_name == "robota_ua":
                 return parser.parse_robota_ua(
                     job_position,
-                    location=translate_location(location),
+                    location=translate_location(location) if location else location,
                     experience=experience,
                     salary=salary,
                 )
